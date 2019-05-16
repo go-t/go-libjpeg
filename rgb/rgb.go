@@ -15,6 +15,8 @@ type Image struct {
 	Stride int
 	// Rect is the image's bounds.
 	Rect image.Rectangle
+	// BGR for opencv
+	Reversed bool
 }
 
 // NewImage allocates and returns RGB image
@@ -44,7 +46,11 @@ func (p *Image) RGBAAt(x, y int) color.RGBA {
 		return color.RGBA{}
 	}
 	i := (y-p.Rect.Min.Y)*p.Stride + (x-p.Rect.Min.X)*3
-	return color.RGBA{p.Pix[i+0], p.Pix[i+1], p.Pix[i+2], 0xFF}
+	if p.Reversed {
+		return color.RGBA{p.Pix[i+2], p.Pix[i+1], p.Pix[i+0], 0xFF}
+	} else {
+		return color.RGBA{p.Pix[i+0], p.Pix[i+1], p.Pix[i+2], 0xFF}
+	}
 }
 
 // ColorModel is RGB color model instance

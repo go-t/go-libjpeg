@@ -5,7 +5,7 @@ import (
 	"image/color"
 	"testing"
 
-	"github.com/pixiv/go-libjpeg/rgb"
+	"github.com/go-t/go-libjpeg/rgb"
 )
 
 func TestImageInterface(t *testing.T) {
@@ -62,5 +62,34 @@ func TestColorRGBA(t *testing.T) {
 	}
 	if gotA != a {
 		t.Errorf("got A: %v, expect A: %v", gotA, a)
+	}
+}
+
+func TestImageAt(t *testing.T) {
+	img := rgb.Image{
+		Pix:    []uint8{0x11, 0x22, 0x33},
+		Stride: 3,
+		Rect:   image.Rect(0, 0, 1, 1),
+	}
+	expect := color.RGBA{0x11, 0x22, 0x33, 0xFF}
+
+	c := img.At(0, 0)
+	if c != expect {
+		t.Errorf("get color:%v, expect color: %v", c, expect)
+	}
+}
+
+func TestImageAtReversed(t *testing.T) {
+	img := rgb.Image{
+		Pix:      []uint8{0x11, 0x22, 0x33},
+		Stride:   3,
+		Rect:     image.Rect(0, 0, 1, 1),
+		Reversed: true,
+	}
+	expect := color.RGBA{0x33, 0x22, 0x11, 0xFF}
+
+	c := img.At(0, 0)
+	if c != expect {
+		t.Errorf("get color:%v, expect color: %v", c, expect)
 	}
 }

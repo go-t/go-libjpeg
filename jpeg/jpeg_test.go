@@ -11,8 +11,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/pixiv/go-libjpeg/jpeg"
-	"github.com/pixiv/go-libjpeg/test/util"
+	"github.com/go-t/go-libjpeg/jpeg"
+	"github.com/go-t/go-libjpeg/rgb"
+	"github.com/go-t/go-libjpeg/test/util"
 )
 
 var naturalImageFiles = []string{
@@ -419,6 +420,42 @@ func TestEncodeRGBA(t *testing.T) {
 		util.WritePNG(decoded, "TestEncodeRGBA.got.png")
 		util.WritePNG(diff, "TestEncodeRGBA.diff.png")
 	}
+}
+
+func tile(dst, src []uint8, rc image.Rectangle, stride int) {
+	for y := rc.Min.Y; y < rc.Max.Y; y++ {
+		for x := rc.Min.X; x < rc.Max.X; x += len(src) {
+			copy(dst[y*stride+x:], src)
+		}
+	}
+}
+
+func TestEncodeRGB(t *testing.T) {
+	size := 64
+	half := size >> 1
+
+	img := rgb.NewImage(image.Rect(0, 0, size, size))
+	tile(img.Pix, []uint8{0xFF, 0, 0}, image.Rect(0, 0, half*3, half), img.Stride)            // red
+	tile(img.Pix, []uint8{0, 0xFF, 0}, image.Rect(half*3, 0, size*3, half), img.Stride)       // green
+	tile(img.Pix, []uint8{0, 0, 0xFF}, image.Rect(0, half, half*3, size), img.Stride)         // blue
+	tile(img.Pix, []uint8{0xFF, 0xFF, 0}, image.Rect(half*3, half, size*3, size), img.Stride) // yellow
+
+	util.WritePNG(img, "TestEncodeRGB.jpg")
+}
+
+func TestEncodeBGR(t *testing.T) {
+	size := 64
+	half := size >> 1
+
+	img := rgb.NewImage(image.Rect(0, 0, size, size))
+	img.Reversed = true
+
+	tile(img.Pix, []uint8{0, 0, 0xFF}, image.Rect(0, 0, half*3, half), img.Stride)            // red
+	tile(img.Pix, []uint8{0, 0xFF, 0}, image.Rect(half*3, 0, size*3, half), img.Stride)       // green
+	tile(img.Pix, []uint8{0xFF, 0, 0}, image.Rect(0, half, half*3, size), img.Stride)         // blue
+	tile(img.Pix, []uint8{0, 0xFF, 0xFF}, image.Rect(half*3, half, size*3, size), img.Stride) // yellow
+
+	util.WritePNG(img, "TestEncodeBGR.jpg")
 }
 
 // See: https://github.com/pixiv/go-libjpeg/issues/36

@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 )
 
@@ -21,10 +22,17 @@ var SubsampledImages = []string{
 	"checkerboard_420.jpg",
 }
 
+type empty struct{}
+
+func getPkgName() string {
+	return reflect.TypeOf(empty{}).PkgPath()
+}
+
 // GetExFilePath returns the path of specified example file.
 func GetExFilePath(name string) string {
+	dir := filepath.Dir(getPkgName())
 	for _, gopath := range strings.Split(os.Getenv("GOPATH"), ":") {
-		path := filepath.Join(gopath, "src/github.com/pixiv/go-libjpeg/test/images", name)
+		path := filepath.Join(gopath, "src", dir, "images", name)
 		if _, err := os.Stat(path); err == nil {
 			return path
 		}
@@ -34,8 +42,10 @@ func GetExFilePath(name string) string {
 
 // GetOutFilePath returns the path of specified out file.
 func GetOutFilePath(name string) string {
+	dir := filepath.Dir(getPkgName())
+
 	for _, gopath := range strings.Split(os.Getenv("GOPATH"), ":") {
-		path := filepath.Join(gopath, "src/github.com/pixiv/go-libjpeg/test/out")
+		path := filepath.Join(gopath, "src", dir, "out")
 		if _, err := os.Stat(path); err == nil {
 			return filepath.Join(path, name)
 		}

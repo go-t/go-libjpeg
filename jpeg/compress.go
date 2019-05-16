@@ -89,6 +89,8 @@ import (
 	"image"
 	"io"
 	"unsafe"
+
+	"github.com/go-t/go-libjpeg/rgb"
 )
 
 // EncoderOptions specifies which settings to use during Compression.
@@ -123,6 +125,8 @@ func Encode(w io.Writer, src image.Image, opt *EncoderOptions) (err error) {
 		err = encodeYCbCr(cinfo, s, opt)
 	case *image.Gray:
 		err = encodeGray(cinfo, s, opt)
+	case *rgb.Image:
+		err = encodeRGB(cinfo, s, opt)
 	case *image.RGBA:
 		err = encodeRGBA(cinfo, s, opt)
 	default:
@@ -198,6 +202,28 @@ func encodeRGBA(cinfo *C.struct_jpeg_compress_struct, src *image.RGBA, p *Encode
 	cinfo.in_color_space = getJCS_EXT_RGBA()
 	if cinfo.in_color_space == C.JCS_UNKNOWN {
 		return errors.New("JCS_EXT_RGBA is not supported (probably built without libjpeg-turbo)")
+	}
+
+	C.jpeg_set_defaults(cinfo)
+	setupEncoderOptions(cinfo, p)
+
+	// Start compression
+	C.jpeg_start_compress(cinfo, C.TRUE)
+	C.encode_rgba(cinfo, C.JSAMPROW(unsafe.Pointer(&src.Pix[0])), C.int(src.Stride))
+	C.jpeg_finish_compress(cinfo)
+	return
+}
+
+// encode rgb.Image
+func encodeRGB(cinfo *C.struct_jpeg_compress_struct, src *rgb.Image, p *EncoderOptions) (err error) {
+	// Set up compression parameters
+	cinfo.image_width = C.JDIMENSION(src.Bounds().Dx())
+	cinfo.image_height = C.JDIMENSION(src.Bounds().Dy())
+	cinfo.input_components = 3
+	if src.Reversed {
+		cinfo.in_color_space = C.JCS_EXT_BGR
+	} else {
+		cinfo.in_color_space = C.JCS_EXT_RGB
 	}
 
 	C.jpeg_set_defaults(cinfo)

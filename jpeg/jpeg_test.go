@@ -430,6 +430,16 @@ func tile(dst, src []uint8, rc image.Rectangle, stride int) {
 	}
 }
 
+func fill(dst []uint8, v []uint8, repeat int) {
+	index := 0
+	for i := 0; i < len(v); i++ {
+		for c, n := v[i], repeat; n > 0; n-- {
+			dst[index] = c
+			index++
+		}
+	}
+}
+
 func TestEncodeRGB(t *testing.T) {
 	size := 64
 	half := size >> 1
@@ -440,7 +450,8 @@ func TestEncodeRGB(t *testing.T) {
 	tile(img.Pix, []uint8{0, 0, 0xFF}, image.Rect(0, half, half*3, size), img.Stride)         // blue
 	tile(img.Pix, []uint8{0xFF, 0xFF, 0}, image.Rect(half*3, half, size*3, size), img.Stride) // yellow
 
-	util.WritePNG(img, "TestEncodeRGB.jpg")
+	util.WritePNG(img, "TestEncodeRGB.png")
+	jpeg.Write(img, "TestEncodeRGB.jpg", nil)
 }
 
 func TestEncodeBGR(t *testing.T) {
@@ -455,7 +466,23 @@ func TestEncodeBGR(t *testing.T) {
 	tile(img.Pix, []uint8{0xFF, 0, 0}, image.Rect(0, half, half*3, size), img.Stride)         // blue
 	tile(img.Pix, []uint8{0, 0xFF, 0xFF}, image.Rect(half*3, half, size*3, size), img.Stride) // yellow
 
-	util.WritePNG(img, "TestEncodeBGR.jpg")
+	util.WritePNG(img, "TestEncodeBGR.png")
+	jpeg.Write(img, "TestEncodeBGR.jpg", nil)
+}
+
+func TestEncodeYCbCr420(t *testing.T) {
+	size := 64
+	img := image.NewYCbCr(image.Rect(0, 0, size, size), image.YCbCrSubsampleRatio420)
+	red := img.ColorModel().Convert(color.RGBA{0xFF, 0, 0, 0xFF}).(color.YCbCr)
+	green := img.ColorModel().Convert(color.RGBA{0, 0xFF, 0, 0xFF}).(color.YCbCr)
+	blue := img.ColorModel().Convert(color.RGBA{0, 0, 0xFF, 0xFF}).(color.YCbCr)
+	yellow := img.ColorModel().Convert(color.RGBA{0xFF, 0xFF, 0, 0xFF}).(color.YCbCr)
+	fill(img.Y, []uint8{red.Y, green.Y, blue.Y, yellow.Y}, size*size/4)
+	fill(img.Cb, []uint8{red.Cb, green.Cb, blue.Cb, yellow.Cb}, size*size/16)
+	fill(img.Cr, []uint8{red.Cr, green.Cr, blue.Cr, yellow.Cr}, size*size/16)
+
+	util.WritePNG(img, "TestEncodeYCbCr420.png")
+	jpeg.Write(img, "TestEncodeYCbCr420.jpg", nil)
 }
 
 // See: https://github.com/pixiv/go-libjpeg/issues/36

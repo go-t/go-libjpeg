@@ -88,6 +88,7 @@ import (
 	"fmt"
 	"image"
 	"io"
+	"os"
 	"unsafe"
 
 	"github.com/go-t/go-libjpeg/rgb"
@@ -99,6 +100,18 @@ type EncoderOptions struct {
 	OptimizeCoding  bool
 	ProgressiveMode bool
 	DCTMethod       DCTMethod
+}
+
+func Write(src image.Image, filepath string, opt *EncoderOptions) (err error) {
+	file, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	if opt == nil {
+		opt = &EncoderOptions{Quality: 85}
+	}
+	return Encode(file, src, opt)
 }
 
 // Encode encodes src image and writes into w as JPEG format data.
